@@ -1,6 +1,6 @@
 import { authenticate } from "../shopify.server";
-import { useLoaderData } from "@remix-run/react";
-import styles from "./_index/styles.module.css";
+import { Link, useLoaderData } from "@remix-run/react";
+import styles from "./app.dashboard.module.css";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -83,7 +83,9 @@ export default function Dashboard() {
           </div>
           <div className={styles.dashboardActions}>
             <button className={styles.actionButton}>רענן נתונים</button>
-            <button className={styles.actionButtonPrimary}>ניהול מוצרים</button>
+            <Link to="/app/products" className={styles.actionButtonPrimary}>
+              ניהול מוצרים
+            </Link>
             <button className={styles.actionButton}>דף הנחיתה</button>
           </div>
         </header>
