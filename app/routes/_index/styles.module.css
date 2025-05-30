@@ -71,3 +71,452 @@
     padding-bottom: 1rem;
   }
 }
+
+/* Dashboard Wrapper */
+.dashboardWrapper {
+  background: #f7f8fa;
+  min-height: 100vh;
+  padding: 2rem 0;
+}
+
+.dashboardContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.dashboardHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+@media (min-width: 768px) {
+  .dashboardHeader {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+.dashboardTitle {
+  font-size: 2.2rem;
+  font-weight: bold;
+  color: #222;
+  margin: 0;
+}
+.dashboardSubtitle {
+  color: #666;
+  margin-top: 0.5rem;
+  font-size: 1.1rem;
+}
+.dashboardActions {
+  display: flex;
+  gap: 0.75rem;
+}
+.actionButton {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  color: #333;
+  padding: 0.5rem 1.2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s, border 0.2s;
+}
+.actionButton:hover {
+  background: #f0f4ff;
+  border-color: #b3c6ff;
+}
+.actionButtonPrimary {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1.4rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.actionButtonPrimary:hover {
+  background: #1e40af;
+}
+
+/* Stats Grid */
+.statsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+@media (min-width: 768px) {
+  .statsGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.statsCard {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  padding: 1.5rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  align-items: flex-start;
+}
+.statsCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.statsCardIcon {
+  font-size: 1.5rem;
+}
+.statsCardTitle {
+  font-size: 1.1rem;
+  color: #444;
+  font-weight: 500;
+}
+.statsCardValue {
+  font-size: 2.1rem;
+  font-weight: bold;
+  color: #222;
+}
+.statsCardTrend {
+  font-size: 0.98rem;
+  color: #666;
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.trendValue_blue { color: #2563eb; font-weight: 500; }
+.trendValue_amber { color: #f59e42; font-weight: 500; }
+.trendValue_green { color: #22c55e; font-weight: 500; }
+.trendValue_indigo { color: #6366f1; font-weight: 500; }
+
+/* Automation Card */
+.automationCard {
+  background: linear-gradient(90deg, #ede9fe 0%, #e0e7ff 100%);
+  border: 1px solid #c7d2fe;
+  border-radius: 18px;
+  margin-bottom: 2.5rem;
+  padding: 0;
+}
+.automationCardContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 2rem 1.5rem;
+}
+@media (min-width: 1024px) {
+  .automationCardContent {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+.automationCardText {
+  flex: 1;
+}
+.automationCardTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 1rem;
+}
+.automationCardIcon {
+  background: #ede9fe;
+  color: #a21caf;
+  border-radius: 8px;
+  padding: 0.5rem;
+  font-size: 1.7rem;
+}
+.automationCardTitle {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #7c3aed;
+}
+.automationCardBadge {
+  background: #ede9fe;
+  color: #7c3aed;
+  border-radius: 8px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+.automationCardFeatures {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.2rem 0;
+  color: #444;
+  font-size: 1.05rem;
+}
+.automationCardFeatures li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+.automationCardPriceRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.automationCardPrice {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #7c3aed;
+}
+.automationCardPriceUnit {
+  color: #666;
+  font-size: 1rem;
+}
+.automationCardPriceExtra {
+  color: #7c3aed;
+  font-size: 0.95rem;
+  margin-right: 1rem;
+}
+.automationCardPriceNote {
+  color: #666;
+  font-size: 0.85rem;
+}
+.automationCardActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 200px;
+}
+.automationCardButton {
+  background: #7c3aed;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.7rem 1.2rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.automationCardButton:hover {
+  background: #6d28d9;
+}
+.automationCardNote {
+  color: #666;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+/* Add Product Card */
+.addProductCard {
+  background: linear-gradient(90deg, #e0e7ff 0%, #ede9fe 100%);
+  border-radius: 18px;
+  margin-bottom: 2.5rem;
+  padding: 1.5rem 1.2rem;
+}
+.addProductContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+@media (min-width: 768px) {
+  .addProductContent {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+.addProductTitle {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+.addProductSubtitle {
+  color: #666;
+  font-size: 0.98rem;
+}
+.addProductForm {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.addProductInput {
+  border: 1px solid #c7d2fe;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  width: 220px;
+}
+.addProductButton {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.addProductButton:hover {
+  background: #1e40af;
+}
+
+/* Recent Products */
+.recentProductsSection {
+  margin-bottom: 2.5rem;
+}
+.recentProductsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.recentProductsTitle {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+.recentProductsLink {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 1rem;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+.recentProductsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.2rem;
+}
+@media (min-width: 600px) {
+  .recentProductsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .recentProductsGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.productCard {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.productImage {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+}
+.productInfo {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.productName {
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: #222;
+}
+.productDescription {
+  color: #666;
+  font-size: 0.97rem;
+}
+.productPrice {
+  color: #2563eb;
+  font-weight: 500;
+  font-size: 1.05rem;
+}
+
+/* Optimization Status */
+.optimizationStatusSection {
+  margin-bottom: 2.5rem;
+}
+.optimizationStatusTitle {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+.optimizationStatusCard {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  padding: 1.5rem 1.2rem;
+}
+.optimizationStatusHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: 1.2rem;
+}
+.optimizationStatusCardTitle {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #222;
+}
+.optimizationStatusCardDesc {
+  color: #666;
+  font-size: 0.97rem;
+}
+.optimizationStatusContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+.optimizationStatusRow {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+.optimizationStatusPercent {
+  color: #2563eb;
+  font-weight: 500;
+  font-size: 1rem;
+}
+.optimizationStatusWithIssues {
+  color: #f59e42;
+  font-weight: 500;
+  font-size: 1rem;
+}
+.optimizationStatusImproved {
+  color: #22c55e;
+  font-weight: 500;
+  font-size: 1rem;
+}
+.optimizationStatusBar {
+  flex: 1;
+  height: 8px;
+  background: #e0e7ff;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-right: 1rem;
+}
+.optimizationStatusBarFill {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 6px;
+  transition: width 0.3s;
+}
+.optimizationStatusBarFillAmber {
+  height: 100%;
+  background: #f59e42;
+  border-radius: 6px;
+  transition: width 0.3s;
+}
+.optimizationStatusBarFillGreen {
+  height: 100%;
+  background: #22c55e;
+  border-radius: 6px;
+  transition: width 0.3s;
+}
