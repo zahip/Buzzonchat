@@ -1,0 +1,219 @@
+.productsWrapper {
+  background: #f7f8fa;
+  min-height: 100vh;
+  padding: 2rem 0;
+}
+.productsContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+.productsHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+@media (min-width: 768px) {
+  .productsHeader {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+.productsTitle {
+  font-size: 2.2rem;
+  font-weight: bold;
+  color: #222;
+  margin: 0;
+}
+.productsSubtitle {
+  color: #666;
+  margin-top: 0.5rem;
+  font-size: 1.1rem;
+}
+.productsActions {
+  display: flex;
+  gap: 0.75rem;
+}
+.actionButton {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  color: #333;
+  padding: 0.5rem 1.2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s, border 0.2s;
+}
+.actionButton:hover {
+  background: #f0f4ff;
+  border-color: #b3c6ff;
+}
+.actionButtonPrimary {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1.4rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.actionButtonPrimary:hover {
+  background: #1e40af;
+}
+.statsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+@media (min-width: 768px) {
+  .statsGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.statsCard {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  padding: 1.5rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  align-items: flex-start;
+}
+.statsCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.statsCardIcon {
+  font-size: 1.5rem;
+}
+.statsCardTitle {
+  font-size: 1.1rem;
+  color: #444;
+  font-weight: 500;
+}
+.statsCardValue {
+  font-size: 2.1rem;
+  font-weight: bold;
+  color: #222;
+}
+.productsTableSection {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  padding: 2rem 1.2rem;
+  margin-top: 2rem;
+  overflow-x: auto;
+}
+.productsTable {
+  width: 100%;
+  border-collapse: collapse;
+  direction: rtl;
+}
+.productsTable th, .productsTable td {
+  padding: 0.75rem 0.5rem;
+  text-align: right;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 1rem;
+}
+.productsTable th {
+  color: #666;
+  font-weight: 500;
+  background: #f7f8fa;
+}
+.productRow:hover {
+  background: #f0f4ff;
+}
+.productImageCell {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.productImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.productImagePlaceholder {
+  font-size: 2rem;
+  color: #bbb;
+}
+.productName {
+  font-weight: 500;
+  color: #222;
+  margin-bottom: 0.2rem;
+}
+.productTags {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+.productTag {
+  background: #f0f4ff;
+  color: #2563eb;
+  border-radius: 6px;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.85rem;
+  margin-top: 0.1rem;
+}
+.statusNeedsImprovement {
+  background: #fee2e2;
+  color: #dc2626;
+  border-radius: 6px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+.statusImproved {
+  background: #d1fae5;
+  color: #059669;
+  border-radius: 6px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+.productScoreBarWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.productScoreBar {
+  width: 60px;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-left: 0.3rem;
+}
+.scoreBarRed {
+  background: #ef4444;
+  height: 100%;
+  border-radius: 4px;
+}
+.scoreBarAmber {
+  background: #f59e42;
+  height: 100%;
+  border-radius: 4px;
+}
+.scoreBarGreen {
+  background: #22c55e;
+  height: 100%;
+  border-radius: 4px;
+}
+.productScoreValue {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #222;
+} 
