@@ -1,6 +1,5 @@
 import { authenticate } from "../shopify.server";
 import { Link, useLoaderData } from "@remix-run/react";
-import styles from "./app.dashboard.module.css";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -72,141 +71,169 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className={styles.dashboardWrapper} dir="rtl">
-      <div className={styles.dashboardContainer}>
-        <header className={styles.dashboardHeader}>
+    <div
+      className="min-h-screen bg-gray-50 flex items-center justify-center"
+      dir="rtl"
+    >
+      <div className="w-full max-w-5xl bg-white rounded-lg shadow p-8">
+        <header className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
           <div>
-            <h1 className={styles.dashboardTitle}>שלום, משתמש יקר</h1>
-            <p className={styles.dashboardSubtitle}>
+            <h1 className="text-2xl font-bold mb-2">שלום, משתמש יקר</h1>
+            <p className="text-gray-600">
               ברוך הבא לדשבורד האופטימיזציה לחנות שלך
             </p>
           </div>
-          <div className={styles.dashboardActions}>
-            <button className={styles.actionButton}>רענן נתונים</button>
-            <Link to="/app/products" className={styles.actionButtonPrimary}>
+          <div className="flex gap-2">
+            <button className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">
+              רענן נתונים
+            </button>
+            <Link
+              to="/app/products"
+              className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+            >
               ניהול מוצרים
             </Link>
-            <button className={styles.actionButton}>דף הנחיתה</button>
+            <button className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">
+              דף הנחיתה
+            </button>
           </div>
         </header>
-
         {/* סטטיסטיקות */}
-        <section className={styles.statsGrid}>
+        <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {demoStats.map((stat) => (
-            <div key={stat.title} className={styles.statsCard}>
-              <div className={styles.statsCardHeader}>
-                <span className={styles.statsCardIcon}>{stat.icon}</span>
-                <span className={styles.statsCardTitle}>{stat.title}</span>
+            <div
+              key={stat.title}
+              className="bg-blue-50 rounded-lg p-4 flex flex-col items-center shadow"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">{stat.icon}</span>
+                <span className="font-semibold text-blue-900">
+                  {stat.title}
+                </span>
               </div>
-              <div className={styles.statsCardValue}>{stat.value}</div>
-              <div className={styles.statsCardTrend}>
+              <div className="text-3xl font-bold text-blue-700 mb-1">
+                {stat.value}
+              </div>
+              <div className="text-sm text-gray-600">
                 <span>{stat.trendLabel}:</span>
-                <span className={styles[`trendValue_${stat.color}`]}>
+                <span
+                  className={
+                    stat.color === "blue"
+                      ? "text-blue-600 font-bold ml-1"
+                      : stat.color === "amber"
+                        ? "text-amber-500 font-bold ml-1"
+                        : stat.color === "green"
+                          ? "text-green-600 font-bold ml-1"
+                          : stat.color === "indigo"
+                            ? "text-indigo-600 font-bold ml-1"
+                            : "ml-1 font-bold"
+                  }
+                >
                   {stat.trendValue}
                 </span>
               </div>
             </div>
           ))}
         </section>
-
         {/* חבילה שנתית לאוטומציה */}
-        <section className={styles.automationCard}>
-          <div className={styles.automationCardContent}>
-            <div className={styles.automationCardText}>
-              <div className={styles.automationCardTitleRow}>
-                <span className={styles.automationCardIcon}>⚡</span>
-                <h3 className={styles.automationCardTitle}>
-                  סוכן AI אוטומטי - פתרון מתקדם
-                </h3>
-                <span className={styles.automationCardBadge}>
-                  מומלץ לחנויות גדולות
-                </span>
-              </div>
-              <ul className={styles.automationCardFeatures}>
-                <li>
-                  🤖 <b>סוכן AI חכם</b> שעוקב אחר השינויים באלגוריתמים
-                </li>
-                <li>
-                  🔄 <b>עדכון אוטומטי</b> של מוצרים שכבר שופרו כשיש צורך
-                </li>
-                <li>
-                  📈 <b>ניטור ביצועים</b> ושיפור רציף של הנראות
-                </li>
-                <li>
-                  📊 <b>דוחות שבועיים מפורטים</b> על שיפורים ותוצאות
-                </li>
-                <li>
-                  ⚡ <b>עדכון מיידי</b> כשמוצרים חדשים נוספים לחנות
-                </li>
-              </ul>
-              <div className={styles.automationCardPriceRow}>
-                <span className={styles.automationCardPrice}>₪297</span>
-                <span className={styles.automationCardPriceUnit}>/חודש</span>
-                <span className={styles.automationCardPriceExtra}>
-                  + ₪0.5 לכל עדכון מוצר
-                  <br />
-                  <span className={styles.automationCardPriceNote}>
-                    (חיסכון של 75% מעדכון ידני)
-                  </span>
-                </span>
-              </div>
+        <section className="bg-yellow-50 rounded-lg p-6 flex flex-col md:flex-row items-center justify-between mb-8 gap-6 shadow">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-2xl">⚡</span>
+              <h3 className="text-lg font-bold">
+                סוכן AI אוטומטי - פתרון מתקדם
+              </h3>
+              <span className="ml-2 px-2 py-1 bg-yellow-200 text-yellow-800 rounded text-xs">
+                מומלץ לחנויות גדולות
+              </span>
             </div>
-            <div className={styles.automationCardActions}>
-              <button className={styles.automationCardButton}>
-                הפעל סוכן AI
-              </button>
-              <p className={styles.automationCardNote}>
-                ניתן לבטל בכל עת • ללא התחייבות • אחריות 30 יום
-              </p>
+            <ul className="list-disc pl-5 mb-4 space-y-1 text-gray-700">
+              <li>
+                🤖 <b>סוכן AI חכם</b> שעוקב אחר השינויים באלגוריתמים
+              </li>
+              <li>
+                🔄 <b>עדכון אוטומטי</b> של מוצרים שכבר שופרו כשיש צורך
+              </li>
+              <li>
+                📈 <b>ניטור ביצועים</b> ושיפור רציף של הנראות
+              </li>
+              <li>
+                📊 <b>דוחות שבועיים מפורטים</b> על שיפורים ותוצאות
+              </li>
+              <li>
+                ⚡ <b>עדכון מיידי</b> כשמוצרים חדשים נוספים לחנות
+              </li>
+            </ul>
+            <div className="flex items-baseline gap-2 mb-2">
+              <span className="text-2xl font-bold text-yellow-700">₪297</span>
+              <span className="text-sm text-gray-700">/חודש</span>
+              <span className="text-xs text-gray-500">
+                + ₪0.5 לכל עדכון מוצר
+                <br />
+                <span className="text-gray-400">
+                  (חיסכון של 75% מעדכון ידני)
+                </span>
+              </span>
             </div>
           </div>
+          <div className="flex flex-col items-center gap-2">
+            <button className="px-6 py-2 rounded bg-yellow-400 text-yellow-900 font-bold hover:bg-yellow-500">
+              הפעל סוכן AI
+            </button>
+            <p className="text-xs text-gray-500">
+              ניתן לבטל בכל עת • ללא התחייבות • אחריות 30 יום
+            </p>
+          </div>
         </section>
-
         {/* הוספת מוצר */}
-        <section className={styles.addProductCard}>
-          <div className={styles.addProductContent}>
-            <div>
-              <h3 className={styles.addProductTitle}>הוסף מוצר חדש לסריקה</h3>
-              <p className={styles.addProductSubtitle}>
-                הדבק קישור למוצר מהחנות שלך והמערכת תוסיף אותו לסריקה
-              </p>
-            </div>
-            <div className={styles.addProductForm}>
-              <input
-                className={styles.addProductInput}
-                placeholder="הכנס כתובת URL של מוצר..."
-              />
-              <button className={styles.addProductButton}>הוסף</button>
-            </div>
+        <section className="bg-white rounded-lg p-6 mb-8 shadow flex flex-col md:flex-row items-center gap-4">
+          <div className="flex-1">
+            <h3 className="text-lg font-bold mb-1">הוסף מוצר חדש לסריקה</h3>
+            <p className="text-gray-600 mb-2">
+              הדבק קישור למוצר מהחנות שלך והמערכת תוסיף אותו לסריקה
+            </p>
           </div>
+          <form className="flex gap-2 w-full md:w-auto">
+            <input
+              className="border rounded px-3 py-2 w-full md:w-64"
+              placeholder="הכנס כתובת URL של מוצר..."
+            />
+            <button className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">
+              הוסף
+            </button>
+          </form>
         </section>
-
         {/* מוצרים אחרונים */}
-        <section className={styles.recentProductsSection}>
-          <div className={styles.recentProductsHeader}>
-            <h2 className={styles.recentProductsTitle}>מוצרים אחרונים</h2>
-            <button className={styles.recentProductsLink}>
+        <section className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold">מוצרים אחרונים</h2>
+            <button className="text-blue-600 hover:underline">
               צפה בכל המוצרים
             </button>
           </div>
-          <div className={styles.recentProductsGrid}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {products.length > 0 ? (
               products.slice(0, 4).map((product: any) => (
-                <div key={product.id} className={styles.productCard}>
+                <div
+                  key={product.id}
+                  className="bg-white rounded-lg shadow p-4 flex flex-col items-center"
+                >
                   <img
                     src={
                       product.featuredImage?.url ||
                       "https://placehold.co/400x300?text=No+Image"
                     }
                     alt={product.title}
-                    className={styles.productImage}
+                    className="w-32 h-32 object-cover rounded mb-2 border"
                   />
-                  <div className={styles.productInfo}>
-                    <div className={styles.productName}>{product.title}</div>
-                    <div className={styles.productDescription}>
+                  <div className="w-full text-center">
+                    <div className="font-semibold text-gray-800">
+                      {product.title}
+                    </div>
+                    <div className="text-xs text-gray-500 mb-1">
                       {product.description}
                     </div>
-                    <div className={styles.productPrice}>
+                    <div className="text-sm font-bold text-blue-700">
                       {product.priceRangeV2?.minVariantPrice?.amount}{" "}
                       {product.priceRangeV2?.minVariantPrice?.currencyCode}
                     </div>
@@ -214,68 +241,37 @@ export default function Dashboard() {
                 </div>
               ))
             ) : (
-              <div
-                style={{
-                  gridColumn: "1/-1",
-                  textAlign: "center",
-                  color: "#888",
-                  padding: "2rem 0",
-                }}
-              >
+              <div className="col-span-full text-center text-gray-400 py-8">
                 אין מוצרים להצגה
               </div>
             )}
           </div>
         </section>
-
         {/* סטטוס אופטימיזציה */}
-        <section className={styles.optimizationStatusSection}>
-          <h2 className={styles.optimizationStatusTitle}>סטטוס אופטימיזציה</h2>
-          <div className={styles.optimizationStatusCard}>
-            <div className={styles.optimizationStatusHeader}>
-              <span className={styles.optimizationStatusCardTitle}>
-                מצב האופטימיזציה בחנות שלך
+        <section className="bg-green-50 rounded-lg p-6 shadow">
+          <h2 className="text-lg font-bold mb-4">סטטוס אופטימיזציה</h2>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-4">
+              <span className="font-semibold">נראות כללית בצ'אטים</span>
+              <span className="text-green-700 font-bold">
+                50% מהמוצרים אופטימלים
               </span>
-              <span className={styles.optimizationStatusCardDesc}>
-                סטטיסטיקות בזמן אמת על מצב המוצרים בחנות
-              </span>
+              <div className="flex-1 h-3 bg-green-100 rounded overflow-hidden">
+                <div className="bg-green-500 h-3" style={{ width: "50%" }} />
+              </div>
             </div>
-            <div className={styles.optimizationStatusContent}>
-              <div className={styles.optimizationStatusRow}>
-                <span>נראות כללית בצ'אטים</span>
-                <span className={styles.optimizationStatusPercent}>
-                  50% מהמוצרים אופטימלים
-                </span>
-                <div className={styles.optimizationStatusBar}>
-                  <div
-                    className={styles.optimizationStatusBarFill}
-                    style={{ width: "50%" }}
-                  />
-                </div>
+            <div className="flex items-center gap-4">
+              <span className="font-semibold">מוצרים הדורשים שיפור</span>
+              <span className="text-amber-600 font-bold">0 מוצרים</span>
+              <div className="flex-1 h-3 bg-amber-100 rounded overflow-hidden">
+                <div className="bg-amber-400 h-3" style={{ width: "0%" }} />
               </div>
-              <div className={styles.optimizationStatusRow}>
-                <span>מוצרים הדורשים שיפור</span>
-                <span className={styles.optimizationStatusWithIssues}>
-                  0 מוצרים
-                </span>
-                <div className={styles.optimizationStatusBar}>
-                  <div
-                    className={styles.optimizationStatusBarFillAmber}
-                    style={{ width: "0%" }}
-                  />
-                </div>
-              </div>
-              <div className={styles.optimizationStatusRow}>
-                <span>מוצרים שעברו אופטימיזציה</span>
-                <span className={styles.optimizationStatusImproved}>
-                  0 מוצרים
-                </span>
-                <div className={styles.optimizationStatusBar}>
-                  <div
-                    className={styles.optimizationStatusBarFillGreen}
-                    style={{ width: "0%" }}
-                  />
-                </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="font-semibold">מוצרים שעברו אופטימיזציה</span>
+              <span className="text-blue-700 font-bold">0 מוצרים</span>
+              <div className="flex-1 h-3 bg-blue-100 rounded overflow-hidden">
+                <div className="bg-blue-500 h-3" style={{ width: "0%" }} />
               </div>
             </div>
           </div>

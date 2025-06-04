@@ -1,10 +1,6 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { Form, useLoaderData } from "@remix-run/react";
-
-import { login } from "../../shopify.server";
-
-import styles from "./styles.module.css";
+import { useLoaderData } from "@remix-run/react";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
@@ -13,43 +9,33 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     throw redirect(`/app?${url.searchParams.toString()}`);
   }
 
-  return { showForm: Boolean(login) };
+  return {};
 };
 
 export default function App() {
-  const { showForm } = useLoaderData<typeof loader>();
+  useLoaderData<typeof loader>();
 
   return (
-    <div className={styles.index}>
-      <div className={styles.content}>
-        <h1 className={styles.heading}>A short heading about [your app]</h1>
-        <p className={styles.text}>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="max-w-xl w-full bg-white rounded-lg shadow p-8 flex flex-col items-center">
+        <h1 className="text-2xl font-bold mb-4 text-center">
+          A short heading about [your app]
+        </h1>
+        <p className="text-gray-600 mb-6 text-center">
           A tagline about [your app] that describes your value proposition.
         </p>
-        {showForm && (
-          <Form className={styles.form} method="post" action="/auth/login">
-            <label className={styles.label}>
-              <span>Shop domain</span>
-              <input className={styles.input} type="text" name="shop" />
-              <span>e.g: my-shop-domain.myshopify.com</span>
-            </label>
-            <button className={styles.button} type="submit">
-              Log in
-            </button>
-          </Form>
-        )}
-        <ul className={styles.list}>
-          <li>
-            <strong>Product feature</strong>. Some detail about your feature and
-            its benefit to your customer.
+        <ul className="space-y-3 w-full">
+          <li className="bg-gray-100 rounded px-4 py-2">
+            <strong className="font-semibold">Product feature</strong>. Some
+            detail about your feature and its benefit to your customer.
           </li>
-          <li>
-            <strong>Product feature</strong>. Some detail about your feature and
-            its benefit to your customer.
+          <li className="bg-gray-100 rounded px-4 py-2">
+            <strong className="font-semibold">Product feature</strong>. Some
+            detail about your feature and its benefit to your customer.
           </li>
-          <li>
-            <strong>Product feature</strong>. Some detail about your feature and
-            its benefit to your customer.
+          <li className="bg-gray-100 rounded px-4 py-2">
+            <strong className="font-semibold">Product feature</strong>. Some
+            detail about your feature and its benefit to your customer.
           </li>
         </ul>
       </div>
