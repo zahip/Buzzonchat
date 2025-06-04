@@ -1,7 +1,9 @@
 import React from "react";
 import { Product } from "./types";
+import { Link } from "@remix-run/react";
 
 export default function ProductsTable({ products }: { products: Product[] }) {
+  console.log("products", products);
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full bg-white border rounded-lg shadow">
@@ -79,9 +81,13 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                 <button className="px-3 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700 mr-1">
                   אמן
                 </button>
-                <button className="px-3 py-1 rounded bg-gray-200 text-xs hover:bg-gray-300">
+
+                <Link
+                  to={`/app/product/${product.id.split("/").pop()}`}
+                  className="px-3 py-1 rounded bg-gray-200 text-xs hover:bg-gray-300"
+                >
                   פרטים
-                </button>
+                </Link>
               </td>
             </tr>
           ))}
