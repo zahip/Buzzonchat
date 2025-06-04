@@ -3,7 +3,7 @@
 client_id = "c099cad4e758ac39245d2adfc98f4bd1"
 name = "Buzzonchat"
 handle = "buzzonchat-3"
-application_url = "https://else-queensland-concerns-cemetery.trycloudflare.com"
+application_url = "https://encountered-publicly-paste-tons.trycloudflare.com"
 embedded = true
 
 [build]
@@ -27,9 +27,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://else-queensland-concerns-cemetery.trycloudflare.com/auth/callback",
-  "https://else-queensland-concerns-cemetery.trycloudflare.com/auth/shopify/callback",
-  "https://else-queensland-concerns-cemetery.trycloudflare.com/api/auth/callback"
+  "https://encountered-publicly-paste-tons.trycloudflare.com/auth/callback",
+  "https://encountered-publicly-paste-tons.trycloudflare.com/auth/shopify/callback",
+  "https://encountered-publicly-paste-tons.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]

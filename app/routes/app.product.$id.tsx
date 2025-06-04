@@ -1,6 +1,7 @@
 import { authenticate } from "../shopify.server";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
+import { useState } from "react";
 
 // דמו לבעיות, סטטוס, ציון
 const DEMO = {
@@ -58,6 +59,75 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 export default function ProductDetailsPage() {
   const { product } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  // --- Optimization Dialog State ---
+  const [showOptimizationDialog, setShowOptimizationDialog] = useState(false);
+  const [optimizationSettings, setOptimizationSettings] = useState({
+    tone: "professional",
+    target_audience: "",
+    detail_level: "medium",
+    additional_keywords: "",
+    focus_areas: ["title", "description", "tags"],
+  });
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [generatedPrompt, setGeneratedPrompt] = useState("");
+  const [optimizationResult, setOptimizationResult] = useState("");
+
+  // --- Prompt Generation ---
+  const generateOptimizationPrompt = () => {
+    let prompt = `אתה מומחה באופטימיזציה של מוצרים עבור חיפושים בבינה מלאכותית ומנועי חיפוש.\n\n`;
+    prompt += `הגדרות האופטימיזציה:\n`;
+    prompt += `- גוון קול: ${optimizationSettings.tone === "professional" ? "מקצועי" : optimizationSettings.tone === "friendly" ? "ידידותי" : optimizationSettings.tone === "marketing" ? "שיווקי" : "טכני"}\n`;
+    prompt += `- קהל יעד: ${optimizationSettings.target_audience || "כללי"}\n`;
+    prompt += `- רמת פירוט: ${optimizationSettings.detail_level === "short" ? "קצר" : optimizationSettings.detail_level === "medium" ? "בינוני" : "מפורט"}\n`;
+    if (optimizationSettings.additional_keywords) {
+      prompt += `- מילות מפתח נוספות לשילוב: ${optimizationSettings.additional_keywords}\n`;
+    }
+    prompt += `- שטחי מיקוד: ${optimizationSettings.focus_areas.join(", ")}\n\n`;
+    prompt += `מוצר לשיפור:\n`;
+    prompt += `שם נוכחי: ${product.title}\n`;
+    prompt += `תיאור נוכחי: ${product.description}\n`;
+    prompt += `תגיות נוכחיות: ${product.tags.join(", ")}\n`;
+    prompt += `מחיר: ${product.priceRangeV2?.minVariantPrice?.amount} ${product.priceRangeV2?.minVariantPrice?.currencyCode}\n`;
+    prompt += `קטגוריה: ${product.productType}\n\n`;
+    prompt += `אנא ספק:\n`;
+    if (optimizationSettings.focus_areas.includes("title")) {
+      prompt += `1. כותרת משופרת\n`;
+    }
+    if (optimizationSettings.focus_areas.includes("description")) {
+      prompt += `2. תיאור משופר\n`;
+    }
+    if (optimizationSettings.focus_areas.includes("tags")) {
+      prompt += `3. תגיות משופרות\n`;
+    }
+    prompt += `4. הסבר קצר מה שופר ולמה\n`;
+    return prompt;
+  };
+
+  // --- Run Optimization ---
+  const handleRunOptimization = async () => {
+    setIsOptimizing(true);
+    setOptimizationResult("");
+    try {
+      const prompt = generateOptimizationPrompt();
+      const res = await fetch("/api/optimize-product", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt,
+          productId: product.id,
+          settings: optimizationSettings,
+        }),
+      });
+      const data = await res.json();
+      setOptimizationResult(data.result);
+      setShowOptimizationDialog(false);
+    } catch (e) {
+      alert("שגיאה באופטימיזציה");
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen" dir="rtl">
@@ -189,11 +259,10 @@ export default function ProductDetailsPage() {
                   />
                 </div>
               </div>
-              <button className="w-full mt-2 px-4 py-2 bg-black text-white rounded font-bold flex items-center justify-center gap-2">
-                <span>✏️</span>
-                ערוך פרטים
-              </button>
-              <button className="w-full mt-2 px-4 py-2 border border-gray-300 rounded font-bold flex items-center justify-center gap-2">
+              <button
+                className="w-full mt-2 px-4 py-2 border border-gray-300 rounded font-bold flex items-center justify-center gap-2"
+                onClick={() => setShowOptimizationDialog(true)}
+              >
                 <span>⚡</span>
                 אמן מוצר
               </button>
@@ -201,6 +270,188 @@ export default function ProductDetailsPage() {
           </div>
         </div>
       </div>
+
+      {/* דיאלוג אופטימיזציה */}
+      {showOptimizationDialog && (
+        <dialog
+          open
+          className="max-w-2xl max-h-[80vh] overflow-y-auto rounded-lg border shadow-lg p-6 bg-white z-50 fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        >
+          <form method="dialog" className="space-y-6">
+            <div className="flex items-center gap-2 text-xl font-bold mb-2">
+              <span>⚙️</span>
+              הגדרות אופטימיזציה
+            </div>
+            <div className="text-gray-500 mb-4">
+              התאם את הגדרות האופטימיזציה עבור המוצר "{product.title}"
+            </div>
+            {/* גוון קול */}
+            <div className="space-y-2">
+              <label>גוון קול</label>
+              <select
+                value={optimizationSettings.tone}
+                onChange={(e) =>
+                  setOptimizationSettings({
+                    ...optimizationSettings,
+                    tone: e.target.value,
+                  })
+                }
+                className="w-full border rounded p-2"
+              >
+                <option value="professional">מקצועי ועניני</option>
+                <option value="friendly">ידידותי ונגיש</option>
+                <option value="marketing">שיווקי ומושך</option>
+                <option value="technical">טכני ומפורט</option>
+              </select>
+            </div>
+            {/* קהל יעד */}
+            <div className="space-y-2">
+              <label>קהל יעד</label>
+              <input
+                type="text"
+                placeholder="למשל: צעירים, מקצועיות, משפחות וכו'"
+                value={optimizationSettings.target_audience}
+                onChange={(e) =>
+                  setOptimizationSettings({
+                    ...optimizationSettings,
+                    target_audience: e.target.value,
+                  })
+                }
+                className="w-full border rounded p-2"
+              />
+            </div>
+            {/* רמת פירוט */}
+            <div className="space-y-2">
+              <label>רמת פירוט</label>
+              <select
+                value={optimizationSettings.detail_level}
+                onChange={(e) =>
+                  setOptimizationSettings({
+                    ...optimizationSettings,
+                    detail_level: e.target.value,
+                  })
+                }
+                className="w-full border rounded p-2"
+              >
+                <option value="short">קצר וחד</option>
+                <option value="medium">בינוני ומאוזן</option>
+                <option value="detailed">מפורט ועשיר</option>
+              </select>
+            </div>
+            {/* מילות מפתח נוספות */}
+            <div className="space-y-2">
+              <label>מילות מפתח נוספות לשילוב</label>
+              <textarea
+                placeholder="הכנס מילות מפתח שתרצה שה-AI יכלול (מופרדות בפסיקים)"
+                value={optimizationSettings.additional_keywords}
+                onChange={(e) =>
+                  setOptimizationSettings({
+                    ...optimizationSettings,
+                    additional_keywords: e.target.value,
+                  })
+                }
+                rows={3}
+                className="w-full border rounded p-2"
+              />
+            </div>
+            {/* שטחי מיקוד */}
+            <div className="space-y-2">
+              <label>מה לשפר?</label>
+              <div className="space-y-2">
+                {[
+                  { id: "title", label: "כותרת המוצר" },
+                  { id: "description", label: "תיאור המוצר" },
+                  { id: "tags", label: "תגיות המוצר" },
+                ].map((area) => (
+                  <div key={area.id} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id={area.id}
+                      checked={optimizationSettings.focus_areas.includes(
+                        area.id,
+                      )}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setOptimizationSettings({
+                            ...optimizationSettings,
+                            focus_areas: [
+                              ...optimizationSettings.focus_areas,
+                              area.id,
+                            ],
+                          });
+                        } else {
+                          setOptimizationSettings({
+                            ...optimizationSettings,
+                            focus_areas:
+                              optimizationSettings.focus_areas.filter(
+                                (id) => id !== area.id,
+                              ),
+                          });
+                        }
+                      }}
+                    />
+                    <label htmlFor={area.id}>{area.label}</label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* הצגת פרומפט */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label>צפה בפרומפט שיישלח ל-AI</label>
+                <button
+                  type="button"
+                  className="border rounded px-2 py-1 text-sm"
+                  onClick={() => {
+                    setGeneratedPrompt(generateOptimizationPrompt());
+                    setShowPrompt(!showPrompt);
+                  }}
+                >
+                  📋 {showPrompt ? "הסתר פרומפט" : "הצג פרומפט"}
+                </button>
+              </div>
+              {showPrompt && (
+                <div className="bg-gray-50 p-4 rounded-lg border max-h-60 overflow-y-auto">
+                  <pre className="text-sm whitespace-pre-wrap text-gray-700">
+                    {generatedPrompt}
+                  </pre>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2 mt-6 justify-end">
+              <button
+                type="button"
+                className="border rounded px-4 py-2"
+                onClick={() => setShowOptimizationDialog(false)}
+                disabled={isOptimizing}
+              >
+                ביטול
+              </button>
+              <button
+                type="button"
+                className="bg-green-600 text-white rounded px-4 py-2 flex items-center gap-2"
+                onClick={handleRunOptimization}
+                disabled={
+                  isOptimizing || optimizationSettings.focus_areas.length === 0
+                }
+              >
+                {isOptimizing ? (
+                  <span className="animate-spin">⏳</span>
+                ) : (
+                  <span>⚡</span>
+                )}
+                הפעל אופטימיזציה
+              </button>
+            </div>
+            {optimizationResult && (
+              <div className="mt-4 p-4 bg-gray-50 border rounded text-right whitespace-pre-wrap text-sm text-gray-800">
+                <b>תוצאה מה-AI:</b>
+                <div>{optimizationResult}</div>
+              </div>
+            )}
+          </form>
+        </dialog>
+      )}
     </div>
   );
 }
