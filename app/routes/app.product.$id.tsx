@@ -25,6 +25,16 @@ const DEMO = {
   ],
 };
 
+type ProductVersion = {
+  id: number;
+  title: string;
+  description: string;
+  tags: string[];
+  score: number;
+  status: "מקורית" | "מוצעת" | "נוכחית";
+  date: string; // תאריך יצירה
+};
+
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { admin } = await authenticate.admin(request);
   const id = params.id;
@@ -57,7 +67,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 };
 
 export default function ProductDetailsPage() {
-  const { product } = useLoaderData<typeof loader>();
+  const { product: initialProduct } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   // --- Optimization Dialog State ---
   const [showOptimizationDialog, setShowOptimizationDialog] = useState(false);
@@ -72,6 +82,21 @@ export default function ProductDetailsPage() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [generatedPrompt, setGeneratedPrompt] = useState("");
   const [optimizationResult, setOptimizationResult] = useState("");
+  // --- New: Product State for Editing ---
+  const [product, setProduct] = useState(initialProduct);
+
+  // --- Version History State ---
+  const [versionHistory, setVersionHistory] = useState<ProductVersion[]>([
+    {
+      id: 1,
+      title: initialProduct.title,
+      description: initialProduct.description,
+      tags: initialProduct.tags,
+      score: 42, // דמו, אפשר לחשב לפי אלגוריתם שלך
+      status: "מקורית",
+      date: new Date().toLocaleString("he-IL"),
+    },
+  ]);
 
   // --- Prompt Generation ---
   const generateOptimizationPrompt = () => {
@@ -101,8 +126,70 @@ export default function ProductDetailsPage() {
       prompt += `3. תגיות משופרות\n`;
     }
     prompt += `4. הסבר קצר מה שופר ולמה\n`;
+    prompt += `תחזיר לי תשובה בעברית בלבד\n`;
     return prompt;
   };
+
+  // --- Parse AI Result ---
+  function parseOptimizationResult(result: string): {
+    title: string;
+    description: string;
+    tags: string[];
+  } {
+    let title = "";
+    let description = "";
+    let tags: string[] = [];
+    let currentField: "title" | "description" | "tags" | null = null;
+
+    // פיצול לשורות
+    const lines = result.split(/\r?\n/);
+
+    for (let line of lines) {
+      line = line.trim();
+      if (!line) continue;
+
+      if (line.startsWith("1.") || line.includes("כותרת משופרת")) {
+        currentField = "title";
+        title = line.replace(/1\.\s*כותרת משופרת[:：]?\s*/, "").trim();
+        continue;
+      }
+      if (line.startsWith("2.") || line.includes("תיאור משופר")) {
+        currentField = "description";
+        description = line.replace(/2\.\s*תיאור משופר[:：]?\s*/, "").trim();
+        continue;
+      }
+      if (line.startsWith("3.") || line.includes("תגיות משופרות")) {
+        currentField = "tags";
+        const tagsLine = line
+          .replace(/3\.\s*תגיות משופרות[:：]?\s*/, "")
+          .trim();
+        tags = tagsLine
+          .split(/,|，/)
+          .map((t) => t.trim())
+          .filter(Boolean);
+        continue;
+      }
+      // המשך שורה קודמת
+      if (currentField === "title") {
+        title += " " + line;
+      } else if (currentField === "description") {
+        description += " " + line;
+      } else if (currentField === "tags") {
+        tags = tags.concat(
+          line
+            .split(/,|，/)
+            .map((t) => t.trim())
+            .filter(Boolean),
+        );
+      }
+    }
+
+    return {
+      title: title || "",
+      description: description || "",
+      tags: tags.length ? tags : [],
+    };
+  }
 
   // --- Run Optimization ---
   const handleRunOptimization = async () => {
@@ -129,6 +216,58 @@ export default function ProductDetailsPage() {
     }
   };
 
+  // --- Approve Optimization ---
+  const handleApproveOptimization = () => {
+    if (!optimizationResult) return;
+    const parsed = parseOptimizationResult(optimizationResult);
+    // הוספת גרסה חדשה להיסטוריה
+    setVersionHistory((prev) => [
+      ...prev,
+      {
+        id: prev.length + 1,
+        title: parsed.title,
+        description: parsed.description,
+        tags: parsed.tags,
+        score: 95, // דמו, אפשר לחשב
+        status: "מוצעת",
+        date: new Date().toLocaleString("he-IL"),
+      },
+    ]);
+    setProduct({
+      ...product,
+      title: parsed.title,
+      description: parsed.description,
+      tags: parsed.tags,
+    });
+    setOptimizationResult("");
+  };
+
+  // --- Save Version to DB ---
+  const handleSaveVersion = async (version: ProductVersion) => {
+    // קריאה ל-API (ייבנה בשלב הבא)
+    try {
+      await fetch("/api/product-version", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(version),
+      });
+      // עדכן סטטוס לגרסה נוכחית
+      setVersionHistory((prev) =>
+        prev.map((v) =>
+          v.id === version.id
+            ? { ...v, status: "נוכחית" }
+            : v.status === "נוכחית"
+              ? { ...v, status: "מוצעת" }
+              : v,
+        ),
+      );
+    } catch (e) {
+      alert("שגיאה בשמירה לשרת");
+    }
+  };
+
+  console.log("optimizationResult", optimizationResult);
+
   return (
     <div className="p-8 bg-gray-50 min-h-screen" dir="rtl">
       <div className="max-w-7xl mx-auto">
@@ -152,6 +291,60 @@ export default function ProductDetailsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
+            {/* היסטוריית גרסאות */}
+            <div className="bg-white rounded-xl shadow p-6 mb-6">
+              <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                <span className="text-xl">⏲️</span> היסטוריית גרסאות
+              </h2>
+              <div className="space-y-3">
+                {versionHistory.map((ver) => (
+                  <div
+                    key={ver.id}
+                    className={`p-4 rounded-lg border flex flex-col gap-2 ${ver.status === "נוכחית" ? "border-green-300 bg-green-50" : ver.status === "מקורית" ? "border-blue-200 bg-blue-50" : "border-gray-200 bg-gray-50"}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold">גרסה {ver.id}</span>
+                      {ver.status === "מקורית" && (
+                        <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-xs font-bold">
+                          מקורית
+                        </span>
+                      )}
+                      {ver.status === "נוכחית" && (
+                        <span className="px-2 py-0.5 rounded bg-green-100 text-green-700 text-xs font-bold">
+                          נוכחית
+                        </span>
+                      )}
+                      {ver.status === "מוצעת" && (
+                        <span className="px-2 py-0.5 rounded bg-gray-200 text-gray-700 text-xs font-bold">
+                          מוצעת
+                        </span>
+                      )}
+                      <span className="text-xs text-gray-400 ml-auto">
+                        {ver.date}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-gray-700">
+                        ציון: <b>{ver.score}</b>
+                      </span>
+                      <span className="truncate max-w-xs text-gray-600">
+                        {ver.title}
+                      </span>
+                    </div>
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        className="border rounded px-3 py-1 text-xs font-bold"
+                        onClick={() => handleSaveVersion(ver)}
+                        disabled={ver.status === "נוכחית"}
+                      >
+                        שמור בדאטבייס
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* טאב גרסה נוכחית/השוואה */}
             <div className="flex border-b mb-6">
               <button className="px-6 py-2 font-bold border-b-2 border-black bg-white">
@@ -197,6 +390,19 @@ export default function ProductDetailsPage() {
                   </div>
                 </div>
               </div>
+              {/* --- Optimization Result OUTSIDE dialog --- */}
+              {optimizationResult && (
+                <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded text-right whitespace-pre-wrap text-sm text-gray-800">
+                  <b>תוצאה מה-AI:</b>
+                  <div>{optimizationResult}</div>
+                  <button
+                    className="mt-4 bg-green-600 text-white rounded px-4 py-2 font-bold"
+                    onClick={handleApproveOptimization}
+                  >
+                    אשר שיפורים
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* בעיות שזוהו */}
@@ -443,12 +649,6 @@ export default function ProductDetailsPage() {
                 הפעל אופטימיזציה
               </button>
             </div>
-            {optimizationResult && (
-              <div className="mt-4 p-4 bg-gray-50 border rounded text-right whitespace-pre-wrap text-sm text-gray-800">
-                <b>תוצאה מה-AI:</b>
-                <div>{optimizationResult}</div>
-              </div>
-            )}
           </form>
         </dialog>
       )}
