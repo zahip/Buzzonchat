@@ -12,8 +12,8 @@ export const action = async ({ request }: { request: Request }) => {
   // קריאה ל-Shopify Admin API לעדכון המוצר
   const response = await admin.graphql(
     `#graphql
-      mutation productUpdate($input: ProductInput!) {
-        productUpdate(input: $input) {
+      mutation productUpdate($product: ProductUpdateInput!) {
+        productUpdate(product: $product) {
           product {
             id
             title
@@ -29,21 +29,25 @@ export const action = async ({ request }: { request: Request }) => {
     `,
     {
       variables: {
-        input: {
+        product: {
           id: productId,
           title,
           descriptionHtml: description,
-          tags,
+          tags: Array.isArray(tags)
+            ? tags.map((t: string) => t.trim()).filter(Boolean)
+            : typeof tags === "string"
+              ? (tags as string)
+                  .split(",")
+                  .map((t: string) => t.trim())
+                  .filter(Boolean)
+              : [],
         },
       },
     },
   );
   const data = await response.json();
-  if (data.errors || data.data.productUpdate.userErrors.length > 0) {
-    return json(
-      { error: data.errors || data.data.productUpdate.userErrors },
-      { status: 400 },
-    );
+  if (data.data.productUpdate.userErrors.length > 0) {
+    return json({ error: data.data.productUpdate.userErrors }, { status: 400 });
   }
   return json({ success: true, product: data.data.productUpdate.product });
 };

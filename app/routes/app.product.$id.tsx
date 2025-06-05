@@ -1,29 +1,11 @@
 import { authenticate } from "../shopify.server";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
-import { useState, useEffect } from "react";
-
-// דמו לבעיות, סטטוס, ציון
-const DEMO = {
-  status: "needs_improvement",
-  statusLabel: "דורש שיפור",
-  statusColor: "bg-red-100 text-red-600",
-  score: 42,
-  issues: [
-    {
-      type: "כותרת",
-      severity: "בינונית",
-      description: "כותרת המוצר חסרה מילות מפתח מחופשות חשובות.",
-      color: "bg-amber-100 text-amber-800",
-    },
-    {
-      type: "תיאור",
-      severity: "גבוהה",
-      description: "תיאור המוצר קצר מדי ולא מסביר את יתרונות המוצר.",
-      color: "bg-red-100 text-red-800",
-    },
-  ],
-};
+import { useState } from "react";
+import ProductMainCard from "../components/ProductMainCard";
+import ProductVersionHistory from "../components/ProductVersionHistory";
+import ProductDescriptionCard from "../components/ProductDescriptionCard";
+import ProductIssuesCard from "../components/ProductIssuesCard";
 
 type ProductVersion = {
   id: number;
@@ -39,6 +21,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { admin } = await authenticate.admin(request);
   const id = params.id;
 
+  // טען את המוצר
   const response = await admin.graphql(
     `#graphql
       query getProduct($id: ID!) {
@@ -63,11 +46,31 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     },
   );
   const responseJson = await response.json();
-  return { product: responseJson.data.product };
+  const product = responseJson.data.product;
+
+  // טען את היסטוריית הגרסאות מה-DB
+  // (השתמש ב-fetch פנימי ל-API או ישירות ל-Prisma אם אפשר)
+  const url = new URL(request.url);
+  url.pathname = "/api/product-version";
+  url.search = `?productId=${product.id}`;
+  const historyRes = await fetch(url.toString(), {
+    headers: { Cookie: request.headers.get("Cookie") || "" },
+  });
+  const historyData = await historyRes.json();
+  let versionHistory = [];
+  if (historyData.versions) {
+    versionHistory = historyData.versions.map((v: any) => ({
+      ...v,
+      tags: v.tags.split(","),
+      date: v.createdAt ? new Date(v.createdAt).toLocaleString("he-IL") : "",
+    }));
+  }
+  return { product, versionHistory };
 };
 
 export default function ProductDetailsPage() {
-  const { product: initialProduct } = useLoaderData<typeof loader>();
+  const { product: initialProduct, versionHistory: initialVersionHistory } =
+    useLoaderData<typeof loader>();
   const navigate = useNavigate();
   // --- Optimization Dialog State ---
   const [showOptimizationDialog, setShowOptimizationDialog] = useState(false);
@@ -82,31 +85,26 @@ export default function ProductDetailsPage() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [generatedPrompt, setGeneratedPrompt] = useState("");
   const [optimizationResult, setOptimizationResult] = useState("");
-  // --- New: Product State for Editing ---
+  // --- Product State for Editing ---
   const [product, setProduct] = useState(initialProduct);
-
   // --- Version History State ---
-  const [versionHistory, setVersionHistory] = useState<ProductVersion[]>([]);
-
-  // --- Load version history from DB ---
-  useEffect(() => {
-    const fetchHistory = async () => {
-      const res = await fetch(`/api/product-version?productId=${product.id}`);
-      const data = await res.json();
-      if (data.versions) {
-        setVersionHistory(
-          data.versions.map((v: any) => ({
-            ...v,
-            tags: v.tags.split(","),
-            date: v.createdAt
-              ? new Date(v.createdAt).toLocaleString("he-IL")
-              : "",
-          })),
-        );
-      }
-    };
-    fetchHistory();
-  }, [product.id]);
+  const [versionHistory, setVersionHistory] = useState<ProductVersion[]>(
+    initialVersionHistory,
+  );
+  // --- Score State ---
+  const [score, setScore] = useState(
+    initialVersionHistory.length > 0
+      ? initialVersionHistory[initialVersionHistory.length - 1].score
+      : 42,
+  );
+  // --- Loading State ---
+  if (!product || !versionHistory) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <span className="animate-spin text-4xl">⏳</span>
+      </div>
+    );
+  }
 
   // --- Prompt Generation ---
   const generateOptimizationPrompt = () => {
@@ -136,6 +134,7 @@ export default function ProductDetailsPage() {
       prompt += `3. תגיות משופרות\n`;
     }
     prompt += `4. הסבר קצר מה שופר ולמה\n`;
+    prompt += `5. ציון מספרי (0-100) לשיפור שביצעת (רק את המספר)\n`;
     prompt += `תחזיר לי תשובה בעברית בלבד\n`;
     return prompt;
   };
@@ -145,10 +144,12 @@ export default function ProductDetailsPage() {
     title: string;
     description: string;
     tags: string[];
+    score: number;
   } {
     let title = "";
     let description = "";
     let tags: string[] = [];
+    let score: number | null = null;
     let currentField: "title" | "description" | "tags" | null = null;
 
     const lines = result.split(/\r?\n/);
@@ -188,6 +189,16 @@ export default function ProductDetailsPage() {
         currentField = null;
         continue;
       }
+      // ציון
+      if (line.startsWith("5.") || line.includes("ציון")) {
+        // מצא את כל המספרים בשורה, קח את הגבוה ביותר (או האחרון)
+        const matches = line.match(/([0-9]{1,3})/g);
+        if (matches && matches.length > 0) {
+          score = Math.max(...matches.map(Number));
+        }
+        currentField = null;
+        continue;
+      }
       // המשך שורה קודמת
       if (currentField === "title") {
         title += " " + line;
@@ -207,6 +218,7 @@ export default function ProductDetailsPage() {
       title: title || "",
       description: description || "",
       tags: tags.length ? tags : [],
+      score: score ?? 0,
     };
   }
 
@@ -245,6 +257,7 @@ export default function ProductDetailsPage() {
       description: parsed.description,
       tags: parsed.tags,
     });
+    setScore(parsed.score); // עדכן את ציון הנראות
     setOptimizationResult("");
     // שמור את הגרסה ב-DB
     await fetch("/api/product-version", {
@@ -255,11 +268,19 @@ export default function ProductDetailsPage() {
         title: parsed.title,
         description: parsed.description,
         tags: parsed.tags,
-        score: 95, // דמו
+        score: Number(parsed.score),
         status: "מוצעת",
       }),
     });
     // עדכן גם את המוצר בשופיפיי
+    const cleanTags = Array.isArray(parsed.tags)
+      ? parsed.tags.map((t: string) => t.trim()).filter(Boolean)
+      : typeof parsed.tags === "string"
+        ? (parsed.tags as string)
+            .split(",")
+            .map((t: string) => t.trim())
+            .filter(Boolean)
+        : [];
     const shopifyRes = await fetch("/api/update-shopify-product", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -267,14 +288,7 @@ export default function ProductDetailsPage() {
         productId: product.id,
         title: parsed.title,
         description: parsed.description,
-        tags: Array.isArray(parsed.tags)
-          ? parsed.tags
-          : typeof parsed.tags === "string"
-            ? (parsed.tags as string)
-                .split(",")
-                .map((t: string) => t.trim())
-                .filter(Boolean)
-            : [],
+        tags: cleanTags,
       }),
     });
     if (!shopifyRes.ok) {
@@ -297,14 +311,18 @@ export default function ProductDetailsPage() {
             : "",
         })),
       );
+      // עדכן את ציון הנראות לפי הגרסה האחרונה
+      if (data.versions.length > 0) {
+        setScore(data.versions[data.versions.length - 1].score);
+      }
     }
   };
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen" dir="rtl">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate(-1)}
@@ -318,184 +336,30 @@ export default function ProductDetailsPage() {
               <p className="text-gray-500">צפייה ועריכת פרטי המוצר</p>
             </div>
           </div>
+          <button
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2 rounded shadow"
+            onClick={() => setShowOptimizationDialog(true)}
+          >
+            <span className="text-xl">⚡</span>
+            אמן מוצר
+          </button>
         </div>
 
+        {/* Product Main Card */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* היסטוריית גרסאות */}
-            <div className="bg-white rounded-xl shadow p-6 mb-6">
-              <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                <span className="text-xl">⏲️</span> היסטוריית גרסאות
-              </h2>
-              <div className="space-y-3">
-                {versionHistory.map((ver) => (
-                  <div
-                    key={ver.id}
-                    className={`p-4 rounded-lg border flex flex-col gap-2 ${ver.status === "נוכחית" ? "border-green-300 bg-green-50" : ver.status === "מקורית" ? "border-blue-200 bg-blue-50" : "border-gray-200 bg-gray-50"}`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold">גרסה {ver.id}</span>
-                      {ver.status === "מקורית" && (
-                        <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-xs font-bold">
-                          מקורית
-                        </span>
-                      )}
-                      {ver.status === "נוכחית" && (
-                        <span className="px-2 py-0.5 rounded bg-green-100 text-green-700 text-xs font-bold">
-                          נוכחית
-                        </span>
-                      )}
-                      {ver.status === "מוצעת" && (
-                        <span className="px-2 py-0.5 rounded bg-gray-200 text-gray-700 text-xs font-bold">
-                          מוצעת
-                        </span>
-                      )}
-                      <span className="text-xs text-gray-400 ml-auto">
-                        {ver.date}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <span className="text-gray-700">
-                        ציון: <b>{ver.score}</b>
-                      </span>
-                      <span className="truncate max-w-xs text-gray-600">
-                        {ver.title}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* טאב גרסה נוכחית/השוואה */}
-            <div className="flex border-b mb-6">
-              <button className="px-6 py-2 font-bold border-b-2 border-black bg-white">
-                גרסה נוכחית
-              </button>
-              <button className="px-6 py-2 text-gray-500 hover:text-black">
-                השוואה
-              </button>
-            </div>
-
-            {/* כרטיס פרטי מוצר */}
-            <div className="bg-white rounded-xl shadow p-8">
-              <h2 className="text-xl font-bold mb-6">פרטי המוצר</h2>
-              <div className="mb-4">
-                <div className="font-bold text-gray-800 mb-1">שם המוצר</div>
-                <div className="mb-4">{product.title}</div>
-                <div className="font-bold text-gray-800 mb-1">תיאור המוצר</div>
-                <div className="mb-4">{product.description || "אין תיאור"}</div>
-                <div className="flex gap-8 mb-4">
-                  <div>
-                    <div className="font-bold text-gray-800 mb-1">מחיר</div>
-                    <div>
-                      {product.priceRangeV2?.minVariantPrice?.amount}{" "}
-                      {product.priceRangeV2?.minVariantPrice?.currencyCode}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-bold text-gray-800 mb-1">קטגוריה</div>
-                    <div>{product.productType || "-"}</div>
-                  </div>
-                </div>
-                <div>
-                  <div className="font-bold text-gray-800 mb-1">תגיות</div>
-                  <div className="flex flex-wrap gap-2">
-                    {product.tags?.map((tag: string, i: number) => (
-                      <span
-                        key={i}
-                        className="bg-gray-100 text-gray-700 rounded px-2 py-0.5 text-xs"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              {/* --- Optimization Result OUTSIDE dialog --- */}
-              {optimizationResult && (
-                <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded text-right whitespace-pre-wrap text-sm text-gray-800">
-                  <b>תוצאה מה-AI:</b>
-                  <div>{optimizationResult}</div>
-                  <button
-                    className="mt-4 bg-green-600 text-white rounded px-4 py-2 font-bold"
-                    onClick={handleApproveOptimization}
-                  >
-                    אשר שיפורים
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* בעיות שזוהו */}
-            <div className="bg-white rounded-xl shadow p-8">
-              <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <span className="text-amber-500 text-xl">⚠️</span>
-                בעיות שזוהו
-              </h2>
-              <div className="space-y-3">
-                {DEMO.issues.map((issue, idx) => (
-                  <div
-                    key={idx}
-                    className={`flex items-center gap-4 p-4 rounded-lg border ${issue.color} border-amber-200`}
-                  >
-                    <span className="font-bold">{issue.type}</span>
-                    <span className="bg-yellow-200 text-yellow-800 rounded px-2 py-0.5 text-xs font-bold">
-                      {issue.severity}
-                    </span>
-                    <span className="text-gray-700">{issue.description}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <ProductMainCard
+              product={product}
+              score={score}
+              optimizationResult={optimizationResult}
+              onApproveOptimization={handleApproveOptimization}
+            />
+            <ProductDescriptionCard description={product.description} />
+            <ProductIssuesCard issues={product.issues} />
           </div>
-
-          {/* Sidebar */}
-          <div>
-            <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center">
-              <div className="w-48 h-48 rounded-lg overflow-hidden mb-4 bg-gray-100 flex items-center justify-center">
-                {product.featuredImage?.url ? (
-                  <img
-                    src={product.featuredImage.url}
-                    alt={product.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-5xl text-gray-300">📦</span>
-                )}
-              </div>
-              <div className="w-full text-center mb-4">
-                <div className="font-bold text-lg mb-1">סטטוס מוצר</div>
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-bold ${DEMO.statusColor}`}
-                >
-                  {DEMO.statusLabel}
-                </span>
-              </div>
-              <div className="w-full text-center mb-4">
-                <div className="font-bold text-lg mb-1">ציון נראות</div>
-                <div className="flex items-center justify-center gap-2">
-                  <span className="text-red-600 font-bold text-xl">
-                    {DEMO.score}
-                  </span>
-                  <span className="text-gray-700">/100</span>
-                </div>
-                <div className="w-full h-2 bg-gray-200 rounded mt-2 mb-1">
-                  <div
-                    className="h-2 rounded bg-red-500"
-                    style={{ width: `${DEMO.score}%` }}
-                  />
-                </div>
-              </div>
-              <button
-                className="w-full mt-2 px-4 py-2 border border-gray-300 rounded font-bold flex items-center justify-center gap-2"
-                onClick={() => setShowOptimizationDialog(true)}
-              >
-                <span>⚡</span>
-                אמן מוצר
-              </button>
-            </div>
+          {/* Sidebar: היסטוריית גרסאות */}
+          <div className="space-y-6">
+            <ProductVersionHistory versionHistory={versionHistory} />
           </div>
         </div>
       </div>
