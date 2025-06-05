@@ -7,6 +7,8 @@ export const action = async ({ request }: { request: Request }) => {
   }
   const { productId, title, description, tags } = await request.json();
 
+  console.log("tags1111", tags);
+
   const { admin } = await authenticate.admin(request);
 
   // קריאה ל-Shopify Admin API לעדכון המוצר

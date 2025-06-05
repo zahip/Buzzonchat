@@ -6,6 +6,8 @@ import ProductMainCard from "../components/ProductMainCard";
 import ProductVersionHistory from "../components/ProductVersionHistory";
 import ProductDescriptionCard from "../components/ProductDescriptionCard";
 import ProductIssuesCard from "../components/ProductIssuesCard";
+import ProductScoreBar from "../components/ProductScoreBar";
+import ProductTags from "../components/ProductTags";
 
 type ProductVersion = {
   id: number;
@@ -97,14 +99,8 @@ export default function ProductDetailsPage() {
       ? initialVersionHistory[initialVersionHistory.length - 1].score
       : 42,
   );
-  // --- Loading State ---
-  if (!product || !versionHistory) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <span className="animate-spin text-4xl">⏳</span>
-      </div>
-    );
-  }
+  // --- Compare Section State ---
+  const [showCompareSection, setShowCompareSection] = useState(false);
 
   // --- Prompt Generation ---
   const generateOptimizationPrompt = () => {
@@ -272,6 +268,8 @@ export default function ProductDetailsPage() {
         status: "מוצעת",
       }),
     });
+
+    console.log("parsed.tags", parsed.tags);
     // עדכן גם את המוצר בשופיפיי
     const cleanTags = Array.isArray(parsed.tags)
       ? parsed.tags.map((t: string) => t.trim()).filter(Boolean)
@@ -281,6 +279,8 @@ export default function ProductDetailsPage() {
             .map((t: string) => t.trim())
             .filter(Boolean)
         : [];
+
+    console.log("cleanTags", cleanTags);
     const shopifyRes = await fetch("/api/update-shopify-product", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -357,9 +357,111 @@ export default function ProductDetailsPage() {
             <ProductDescriptionCard description={product.description} />
             <ProductIssuesCard issues={product.issues} />
           </div>
-          {/* Sidebar: היסטוריית גרסאות */}
+          {/* Sidebar: היסטוריית גרסאות + השוואה */}
           <div className="space-y-6">
             <ProductVersionHistory versionHistory={versionHistory} />
+            {/* כפתור השוואת גרסאות */}
+            {versionHistory.length > 0 && !showCompareSection && (
+              <button
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded shadow"
+                onClick={() => setShowCompareSection(true)}
+                type="button"
+              >
+                השווה גרסאות
+              </button>
+            )}
+            {/* פופאפ השוואת גרסאות */}
+            {versionHistory.length > 0 &&
+              showCompareSection &&
+              (() => {
+                const lastVersion = versionHistory[versionHistory.length - 1];
+                return (
+                  <dialog
+                    open
+                    className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-lg border shadow-lg p-6 bg-white z-50 fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                  >
+                    <button
+                      className="absolute left-4 top-4 text-gray-500 hover:text-red-600 text-xl font-bold"
+                      onClick={() => setShowCompareSection(false)}
+                      title="סגור השוואה"
+                      type="button"
+                    >
+                      ✕
+                    </button>
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                      <span className="text-blue-600">🔄</span> השוואת גרסאות
+                    </h2>
+                    <div className="flex flex-col md:flex-row gap-6">
+                      {/* גרסה אחרונה */}
+                      <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-bold text-gray-700 text-sm">
+                            גרסה אחרונה
+                          </span>
+                          <span className="bg-gray-100 text-gray-700 rounded px-2 py-0.5 text-xs font-bold">
+                            היסטוריה
+                          </span>
+                          <ProductScoreBar score={lastVersion.score} big />
+                        </div>
+                        <div className="mb-2 font-semibold">
+                          {lastVersion.title}
+                        </div>
+                        <div className="mb-2">
+                          <span className="text-xs text-gray-500">מחיר:</span>
+                          <span className="text-sm font-bold text-gray-900 ml-2">
+                            {product.priceRangeV2?.minVariantPrice?.amount}{" "}
+                            {
+                              product.priceRangeV2?.minVariantPrice
+                                ?.currencyCode
+                            }
+                          </span>
+                        </div>
+                        <div className="mb-2">
+                          <ProductTags tags={lastVersion.tags} />
+                        </div>
+                        <div className="mb-2">
+                          <p className="text-gray-700 leading-relaxed whitespace-pre-line text-xs">
+                            {lastVersion.description || "אין תיאור"}
+                          </p>
+                        </div>
+                      </div>
+                      {/* מוצר נוכחי */}
+                      <div className="flex-1 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-bold text-blue-700 text-sm">
+                            מוצר נוכחי
+                          </span>
+                          <span className="bg-blue-100 text-blue-700 rounded px-2 py-0.5 text-xs font-bold">
+                            נוכחי
+                          </span>
+                          <ProductScoreBar score={score} big />
+                        </div>
+                        <div className="mb-2 font-semibold">
+                          {product.title}
+                        </div>
+                        <div className="mb-2">
+                          <span className="text-xs text-gray-500">מחיר:</span>
+                          <span className="text-sm font-bold text-gray-900 ml-2">
+                            {product.priceRangeV2?.minVariantPrice?.amount}{" "}
+                            {
+                              product.priceRangeV2?.minVariantPrice
+                                ?.currencyCode
+                            }
+                          </span>
+                        </div>
+                        <div className="mb-2">
+                          <ProductTags tags={product.tags} />
+                        </div>
+                        <div className="mb-2">
+                          <p className="text-gray-700 leading-relaxed whitespace-pre-line text-xs">
+                            {product.description || "אין תיאור"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </dialog>
+                );
+              })()}
           </div>
         </div>
       </div>
