@@ -1,7 +1,7 @@
 import { authenticate } from "../shopify.server";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // דמו לבעיות, סטטוס, ציון
 const DEMO = {
@@ -86,17 +86,27 @@ export default function ProductDetailsPage() {
   const [product, setProduct] = useState(initialProduct);
 
   // --- Version History State ---
-  const [versionHistory, setVersionHistory] = useState<ProductVersion[]>([
-    {
-      id: 1,
-      title: initialProduct.title,
-      description: initialProduct.description,
-      tags: initialProduct.tags,
-      score: 42, // דמו, אפשר לחשב לפי אלגוריתם שלך
-      status: "מקורית",
-      date: new Date().toLocaleString("he-IL"),
-    },
-  ]);
+  const [versionHistory, setVersionHistory] = useState<ProductVersion[]>([]);
+
+  // --- Load version history from DB ---
+  useEffect(() => {
+    const fetchHistory = async () => {
+      const res = await fetch(`/api/product-version?productId=${product.id}`);
+      const data = await res.json();
+      if (data.versions) {
+        setVersionHistory(
+          data.versions.map((v: any) => ({
+            ...v,
+            tags: v.tags.split(","),
+            date: v.createdAt
+              ? new Date(v.createdAt).toLocaleString("he-IL")
+              : "",
+          })),
+        );
+      }
+    };
+    fetchHistory();
+  }, [product.id]);
 
   // --- Prompt Generation ---
   const generateOptimizationPrompt = () => {
@@ -141,7 +151,6 @@ export default function ProductDetailsPage() {
     let tags: string[] = [];
     let currentField: "title" | "description" | "tags" | null = null;
 
-    // פיצול לשורות
     const lines = result.split(/\r?\n/);
 
     for (let line of lines) {
@@ -167,6 +176,16 @@ export default function ProductDetailsPage() {
           .split(/,|，/)
           .map((t) => t.trim())
           .filter(Boolean);
+        continue;
+      }
+      // עצור תגיות אם מתחיל שדה חדש (4. או "הסבר")
+      if (
+        currentField === "tags" &&
+        (line.startsWith("4.") ||
+          line.startsWith("**4.") ||
+          line.includes("הסבר"))
+      ) {
+        currentField = null;
         continue;
       }
       // המשך שורה קודמת
@@ -217,22 +236,9 @@ export default function ProductDetailsPage() {
   };
 
   // --- Approve Optimization ---
-  const handleApproveOptimization = () => {
+  const handleApproveOptimization = async () => {
     if (!optimizationResult) return;
     const parsed = parseOptimizationResult(optimizationResult);
-    // הוספת גרסה חדשה להיסטוריה
-    setVersionHistory((prev) => [
-      ...prev,
-      {
-        id: prev.length + 1,
-        title: parsed.title,
-        description: parsed.description,
-        tags: parsed.tags,
-        score: 95, // דמו, אפשר לחשב
-        status: "מוצעת",
-        date: new Date().toLocaleString("he-IL"),
-      },
-    ]);
     setProduct({
       ...product,
       title: parsed.title,
@@ -240,33 +246,59 @@ export default function ProductDetailsPage() {
       tags: parsed.tags,
     });
     setOptimizationResult("");
-  };
-
-  // --- Save Version to DB ---
-  const handleSaveVersion = async (version: ProductVersion) => {
-    // קריאה ל-API (ייבנה בשלב הבא)
-    try {
-      await fetch("/api/product-version", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(version),
-      });
-      // עדכן סטטוס לגרסה נוכחית
-      setVersionHistory((prev) =>
-        prev.map((v) =>
-          v.id === version.id
-            ? { ...v, status: "נוכחית" }
-            : v.status === "נוכחית"
-              ? { ...v, status: "מוצעת" }
-              : v,
-        ),
+    // שמור את הגרסה ב-DB
+    await fetch("/api/product-version", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        productId: product.id,
+        title: parsed.title,
+        description: parsed.description,
+        tags: parsed.tags,
+        score: 95, // דמו
+        status: "מוצעת",
+      }),
+    });
+    // עדכן גם את המוצר בשופיפיי
+    const shopifyRes = await fetch("/api/update-shopify-product", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        productId: product.id,
+        title: parsed.title,
+        description: parsed.description,
+        tags: Array.isArray(parsed.tags)
+          ? parsed.tags
+          : typeof parsed.tags === "string"
+            ? (parsed.tags as string)
+                .split(",")
+                .map((t: string) => t.trim())
+                .filter(Boolean)
+            : [],
+      }),
+    });
+    if (!shopifyRes.ok) {
+      const err = await shopifyRes.json();
+      alert(
+        "שגיאה בעדכון המוצר בשופיפיי: " +
+          (err.error ? JSON.stringify(err.error) : shopifyRes.status),
       );
-    } catch (e) {
-      alert("שגיאה בשמירה לשרת");
+    }
+    // טען מחדש את ההיסטוריה
+    const res = await fetch(`/api/product-version?productId=${product.id}`);
+    const data = await res.json();
+    if (data.versions) {
+      setVersionHistory(
+        data.versions.map((v: any) => ({
+          ...v,
+          tags: v.tags.split(","),
+          date: v.createdAt
+            ? new Date(v.createdAt).toLocaleString("he-IL")
+            : "",
+        })),
+      );
     }
   };
-
-  console.log("optimizationResult", optimizationResult);
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen" dir="rtl">
@@ -330,15 +362,6 @@ export default function ProductDetailsPage() {
                       <span className="truncate max-w-xs text-gray-600">
                         {ver.title}
                       </span>
-                    </div>
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        className="border rounded px-3 py-1 text-xs font-bold"
-                        onClick={() => handleSaveVersion(ver)}
-                        disabled={ver.status === "נוכחית"}
-                      >
-                        שמור בדאטבייס
-                      </button>
                     </div>
                   </div>
                 ))}
