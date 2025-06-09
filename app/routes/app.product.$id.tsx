@@ -1,5 +1,5 @@
 import { authenticate } from "../shopify.server";
-import { useLoaderData, useNavigate } from "@remix-run/react";
+import { useLoaderData, useNavigate, useRevalidator } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { useState } from "react";
 import ProductMainCard from "../components/ProductMainCard";
@@ -74,6 +74,7 @@ export default function ProductDetailsPage() {
   const { product: initialProduct, versionHistory: initialVersionHistory } =
     useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  const revalidator = useRevalidator();
   // --- Optimization Dialog State ---
   const [showOptimizationDialog, setShowOptimizationDialog] = useState(false);
   const [optimizationSettings, setOptimizationSettings] = useState({
@@ -291,6 +292,8 @@ export default function ProductDetailsPage() {
         tags: cleanTags,
       }),
     });
+    // רענון הטוקנים ב-layout
+    revalidator.revalidate();
     if (!shopifyRes.ok) {
       const err = await shopifyRes.json();
       alert(
