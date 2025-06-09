@@ -15,10 +15,33 @@ import {
 } from "@shopify/polaris";
 import { TitleBar, useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
+import { USAGE_PLAN } from "../constants/plans";
+import { Plan } from "@prisma/client";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
-
+  const { session, admin } = await authenticate.admin(request);
+  const shop = session?.shop;
+  let name, email;
+  if (admin) {
+    try {
+      const response = await admin.graphql(
+        `\n        {\n          shop {\n            name\n            email\n          }\n        }\n      `,
+      );
+      const data = await response.json();
+      name = data.data.shop.name;
+      email = data.data.shop.email;
+    } catch (e) {
+      console.error("Failed to fetch shop name/email", e);
+    }
+  }
+  if (shop) {
+    const prisma = (await import("../db.server")).default;
+    await prisma.user.upsert({
+      where: { shop },
+      update: { name, email },
+      create: { shop, plan: Plan.USAGE, tokens: 0, name, email },
+    });
+  }
   return null;
 };
 
@@ -313,7 +336,7 @@ export default function Index() {
                       to get started
                     </List.Item>
                     <List.Item>
-                      Explore Shopify’s API with{" "}
+                      Explore Shopify's API with{" "}
                       <Link
                         url="https://shopify.dev/docs/apps/tools/graphiql-admin-api"
                         target="_blank"

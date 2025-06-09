@@ -42,3 +42,29 @@ model ProductVersion {
   status      String // 'מקורית', 'מוצעת', 'נוכחית'
   createdAt   DateTime @default(now())
 }
+
+enum Plan {
+  USAGE
+  MONTHLY
+  AI
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  shop       String   @unique // shopify domain, e.g. myshop.myshopify.com
+  email      String? // optional, can be filled from Shopify API
+  name       String? // optional, can be filled from Shopify API
+  plan       Plan // the plan the user purchased
+  tokens     Int      @default(0) // number of tokens/credits
+  createdAt  DateTime @default(now())
+  tokensList Token[]
+}
+
+model Token {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  value     String // token value or code
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}

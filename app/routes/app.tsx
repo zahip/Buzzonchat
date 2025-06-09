@@ -6,20 +6,43 @@ import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 
 import { authenticate } from "../shopify.server";
+import prisma from "../db.server";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
-
-  return { apiKey: process.env.SHOPIFY_API_KEY || "" };
+  const { session } = await authenticate.admin(request);
+  let tokens: number | null = null;
+  if (session?.shop) {
+    const user = await prisma.user.findUnique({
+      where: { shop: session.shop },
+    });
+    tokens = user?.tokens ?? null;
+  }
+  return { apiKey: process.env.SHOPIFY_API_KEY || "", tokens };
 };
 
 export default function App() {
-  const { apiKey } = useLoaderData<typeof loader>();
+  const { apiKey, tokens } = useLoaderData<typeof loader>();
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
+      <div style={{ position: "fixed", top: 10, left: 10, zIndex: 1000 }}>
+        {tokens !== null && (
+          <div
+            style={{
+              background: "#fff",
+              border: "1px solid #eee",
+              borderRadius: 8,
+              padding: "6px 16px",
+              boxShadow: "0 2px 8px #0001",
+              fontWeight: 600,
+            }}
+          >
+            טוקנים זמינים: {tokens}
+          </div>
+        )}
+      </div>
       <NavMenu>
         <Link to="/app" rel="home">
           Home

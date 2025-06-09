@@ -1,6 +1,18 @@
 import { Form } from "@remix-run/react";
 import { ActionFunctionArgs, redirect } from "@remix-run/node";
 import { USAGE_PLAN, MONTHLY_PLAN, AI_PLAN } from "../constants/plans";
+import prismaPkg from "@prisma/client";
+const { Plan } = prismaPkg;
+
+// במקום Plan כ-type, נגדיר טיפוס מתאים:
+type PlanType = (typeof Plan)[keyof typeof Plan];
+
+// מיפוי בין PlanType לערך בעברית:
+const planTypeToLabel = {
+  [Plan.USAGE]: "שלם לפי שימוש",
+  [Plan.MONTHLY]: "חבילת קרדיטים חודשית",
+  [Plan.AI]: "אוטומטי AI סוכן",
+} as const;
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { authenticate } = await import("../shopify.server");
@@ -9,14 +21,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (!plan || typeof plan !== "string") {
     return redirect("/app/billing?error=missing_plan");
   }
-  let validPlan:
-    | typeof USAGE_PLAN
-    | typeof MONTHLY_PLAN
-    | typeof AI_PLAN
-    | null = null;
-  if (plan === USAGE_PLAN) validPlan = USAGE_PLAN;
-  else if (plan === MONTHLY_PLAN) validPlan = MONTHLY_PLAN;
-  else if (plan === AI_PLAN) validPlan = AI_PLAN;
+  let validPlan: PlanType | null = null;
+  if (plan === USAGE_PLAN) validPlan = Plan.USAGE;
+  else if (plan === MONTHLY_PLAN) validPlan = Plan.MONTHLY;
+  else if (plan === AI_PLAN) validPlan = Plan.AI;
   if (!validPlan) {
     return redirect("/app/billing?error=invalid_plan");
   }
@@ -24,18 +32,51 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { billing } = await authenticate.admin(request);
   console.log("billing", billing);
   await billing.require({
-    plans: [validPlan],
+    plans: [
+      planTypeToLabel[validPlan] as
+        | "שלם לפי שימוש"
+        | "חבילת קרדיטים חודשית"
+        | "אוטומטי AI סוכן",
+    ],
     isTest: true,
     onFailure: async (err) => {
       console.error("Billing error:", err);
-      const url = new URL(request.url);
       return billing.request({
-        plan: MONTHLY_PLAN,
+        plan: planTypeToLabel[validPlan] as
+          | "שלם לפי שימוש"
+          | "חבילת קרדיטים חודשית"
+          | "אוטומטי AI סוכן",
         isTest: true,
-        returnUrl: `${url.origin}/app/dashboard`,
+        returnUrl: `https://admin.shopify.com/store/tomer-the-king/apps/buzzonchat-3/app/dashboard`,
       });
     },
   });
+
+  // --- User/plan/tokens logic ---
+  const { session } = await authenticate.admin(request);
+  console.log("session", session);
+  const shop = session?.shop;
+  console.log("shop", shop);
+  if (shop) {
+    const prisma = (await import("../db.server")).default;
+    const planToTokens: Record<PlanType, number> = {
+      [Plan.USAGE]: 0,
+      [Plan.MONTHLY]: 500,
+      [Plan.AI]: 0,
+    };
+    const tokens = planToTokens[validPlan] ?? 0;
+    await prisma.user.upsert({
+      where: { shop },
+      update: { plan: validPlan, tokens },
+      create: {
+        shop,
+        plan: validPlan,
+        tokens,
+      },
+    });
+  }
+  // --- End user logic ---
+
   return redirect("/app");
 };
 
